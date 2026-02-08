@@ -17,7 +17,6 @@ type CheckResult = {
 
 export default class Doctor extends Command {
   static description = "Check your environment for common Butano issues";
-
   static flags = {
     buildExample: Flags.boolean({
       aliases: ["build-example"],
@@ -59,8 +58,8 @@ export default class Doctor extends Command {
       ? path.join(devkitproEnv, "devkitARM")
       : "";
     const devkitarmCandidates = [devkitarmEnv, devkitarmFallback].filter(
-      (value): value is string => Boolean(value),
-    );
+      Boolean,
+    ) as string[];
     const devkitarmPath = devkitarmCandidates.find((candidate) =>
       existsSync(candidate),
     );
@@ -103,13 +102,14 @@ export default class Doctor extends Command {
     const butanoLibDir = resolveButanoLibDir(butanoBase);
     const butanoExists = existsSync(butanoBase);
     const butanoMakExists = existsSync(path.join(butanoLibDir, "butano.mak"));
-    if (!butanoExists) {
-      results.push(this.result("Butano", "Not found", "error"));
-    } else if (!butanoMakExists) {
-      results.push(this.result("Butano", "butano.mak missing", "warn"));
-    } else {
-      results.push(this.result("Butano", butanoLibDir, "ok"));
-    }
+    const butanoStatus = getButanoStatus(
+      butanoExists,
+      butanoMakExists,
+      butanoLibDir,
+    );
+    results.push(
+      this.result("Butano", butanoStatus.message, butanoStatus.status),
+    );
 
     this.log("");
     for (const result of results) {
@@ -131,11 +131,16 @@ export default class Doctor extends Command {
     );
 
     if (summary.error > 0) {
-      this.log(this.colorize(yellow, "Fix the errors above and try again.", useColor));
+      this.log(
+        this.colorize(yellow, "Fix the errors above and try again.", useColor),
+      );
     }
   }
 
-  private async buildExample(examplePath: string, useColor: boolean): Promise<void> {
+  private async buildExample(
+    examplePath: string,
+    useColor: boolean,
+  ): Promise<void> {
     if (!existsSync(examplePath)) {
       this.logCheck(
         this.result("Example build", "Example path not found", "warn"),
@@ -164,10 +169,6 @@ export default class Doctor extends Command {
     return style(value);
   }
 
-  private result(label: string, message: string, status: CheckStatus): CheckResult {
-    return { label, message, status };
-  }
-
   private logCheck(result: CheckResult, useColor: boolean): void {
     const icon =
       result.status === "ok"
@@ -180,14 +181,43 @@ export default class Doctor extends Command {
       : "";
     this.log(`${icon} ${result.label}${detail}`);
   }
+
+  private result(
+    label: string,
+    message: string,
+    status: CheckStatus,
+  ): CheckResult {
+    return { label, message, status };
+  }
 }
 
-function summarize(results: CheckResult[]): { error: number; ok: number; warn: number } {
+function summarize(results: CheckResult[]): {
+  error: number;
+  ok: number;
+  warn: number;
+} {
   const summary = { error: 0, ok: 0, warn: 0 };
   for (const result of results) {
     summary[result.status] += 1;
   }
+
   return summary;
+}
+
+function getButanoStatus(
+  exists: boolean,
+  makExists: boolean,
+  libDir: string,
+): { message: string; status: CheckStatus } {
+  if (exists) {
+    if (makExists) {
+      return { message: libDir, status: "ok" };
+    }
+
+    return { message: "butano.mak missing", status: "warn" };
+  }
+
+  return { message: "Not found", status: "error" };
 }
 
 function defaultExamplePath(butanoBase: string): string {

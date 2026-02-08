@@ -1,6 +1,6 @@
 {
   "name": "init-gba",
-  "description": "A CLI to kickstart a GBA game",
+  "description": "A CLI that makes bootstrapping a GBA game with butano a breeze",
   "version": "0.0.0",
   "author": "SaraVieira",
   "bin": {
