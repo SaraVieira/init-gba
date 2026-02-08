@@ -122,15 +122,21 @@ export async function renamePathsWithToken(
   return renamed;
 }
 
+export type RomMetadata = {
+  code: string;
+  title: string;
+};
+
 export function makefileContents(
   butanoDir: string,
   projectId: string,
   commonDir?: string,
+  romMetadata?: RomMetadata,
 ): string {
   const escapedPath = escapeMakePath(butanoDir);
   const escapedCommonDir = commonDir ? escapeMakePath(commonDir) : null;
-  const romTitle = toRomTitle(projectId);
-  const romCode = toRomCode(projectId);
+  const romTitle = romMetadata?.title ?? toRomTitle(projectId);
+  const romCode = romMetadata?.code ?? toRomCode(projectId);
   const sources = "src";
   const includes = escapedCommonDir
     ? `include ${escapedCommonDir}/include`
@@ -216,12 +222,12 @@ include $(LIBBUTANOABS)/butano.mak
 `;
 }
 
-function toRomTitle(projectId: string): string {
+export function toRomTitle(projectId: string): string {
   const normalized = projectId.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase();
   return (normalized || "GBA").slice(0, 12);
 }
 
-function toRomCode(projectId: string): string {
+export function toRomCode(projectId: string): string {
   const normalized = projectId.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase();
   const padded = (normalized || "GAME").padEnd(4, "G");
   return padded.slice(0, 4);

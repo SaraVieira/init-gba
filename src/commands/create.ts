@@ -1,4 +1,4 @@
-import { box, intro, spinner } from "@clack/prompts";
+import { box, intro, note, spinner } from "@clack/prompts";
 import { Command, Flags } from "@oclif/core";
 import { gray, green, yellow } from "ansis";
 import { existsSync, promises as fs } from "node:fs";
@@ -22,6 +22,9 @@ import {
   removeGitDir,
   renamePathsWithToken,
   replaceTokenInTextFiles,
+  type RomMetadata,
+  toRomCode,
+  toRomTitle,
 } from "../lib/template.js";
 
 const DEFAULT_BUTANO_REPO = "https://github.com/GValiente/butano.git";
@@ -47,6 +50,14 @@ export default class Create extends Command {
     nonInteractive: Flags.boolean({
       aliases: ["non-interactive"],
       description: "Fail if required input is missing",
+    }),
+    romCode: Flags.string({
+      aliases: ["rom-code"],
+      description: "ROM code (4 uppercase characters)",
+    }),
+    romTitle: Flags.string({
+      aliases: ["rom-title"],
+      description: "ROM title (uppercase, max 12 chars)",
     }),
     skipDeps: Flags.boolean({
       aliases: ["skip-deps"],
@@ -108,6 +119,18 @@ export default class Create extends Command {
         await resolveText(flags.dir, prompts, "Project directory", defaultDir),
       );
 
+      if (hasUnsafePathCharacters(targetDir)) {
+        const warningMessage =
+          "Project path contains spaces or special characters.\nButano recommends avoiding them.";
+        if (process.stdout.isTTY) {
+          note(warningMessage, "Path warning");
+        } else {
+          this.log(
+            `${this.colorize(yellow, "!", useColor)} ${warningMessage.replaceAll("\n", " ")}`,
+          );
+        }
+      }
+
       await ensureEmptyTarget(targetDir, flags.force, prompts);
       this.logProgress("Project", projectName, "success", useColor);
 
@@ -168,10 +191,18 @@ export default class Create extends Command {
         const commonDirRelative = commonDir
           ? normalizeRelativePath(path.relative(targetDir, commonDir))
           : undefined;
+        const romMetadata = await resolveRomMetadata({
+          defaultCode: toRomCode(projectId),
+          defaultTitle: toRomTitle(projectId),
+          flags,
+          nonInteractive,
+          prompts,
+        });
         await maybeCreateMakefile({
           butanoDir: libButanoDir,
           commonDir: commonDirRelative,
           projectId,
+          romMetadata: romMetadata ?? undefined,
           targetDir,
         });
         this.logProgress("Makefile", "written", "success", useColor);
@@ -397,13 +428,19 @@ type MakefileOptions = {
   butanoDir: string;
   commonDir?: string;
   projectId: string;
+  romMetadata?: RomMetadata;
   targetDir: string;
 };
 
 async function maybeCreateMakefile(options: MakefileOptions): Promise<void> {
-  const { butanoDir, commonDir, projectId, targetDir } = options;
+  const { butanoDir, commonDir, projectId, romMetadata, targetDir } = options;
   const makefilePath = path.join(targetDir, "Makefile");
-  const contents = makefileContents(butanoDir, projectId, commonDir);
+  const contents = makefileContents(
+    butanoDir,
+    projectId,
+    commonDir,
+    romMetadata,
+  );
   await fs.writeFile(makefilePath, contents, "utf8");
 }
 
@@ -429,6 +466,65 @@ function toProjectId(name: string): string {
     .replaceAll(/^_+|_+$/g, "")
     .slice(0, 64);
   return normalized || "project";
+}
+
+type RomMetadataInput = {
+  defaultCode: string;
+  defaultTitle: string;
+  flags: {
+    romCode?: string;
+    romTitle?: string;
+  };
+  nonInteractive: boolean;
+  prompts: PromptSession;
+};
+
+async function resolveRomMetadata(
+  input: RomMetadataInput,
+): Promise<null | RomMetadata> {
+  const { defaultCode, defaultTitle, flags, nonInteractive, prompts } = input;
+  const hasOverrides = Boolean(flags.romCode || flags.romTitle);
+
+  if (hasOverrides) {
+    return {
+      code: normalizeRomCode(flags.romCode ?? defaultCode),
+      title: normalizeRomTitle(flags.romTitle ?? defaultTitle),
+    };
+  }
+
+  if (nonInteractive) return null;
+
+  const shouldSet = await prompts.confirm(
+    "Set ROM metadata (title/code)?",
+    false,
+  );
+  if (!shouldSet) return null;
+
+  const titleInput = await prompts.text("ROM title", defaultTitle);
+  const codeInput = await prompts.text("ROM code", defaultCode);
+
+  return {
+    code: normalizeRomCode(codeInput),
+    title: normalizeRomTitle(titleInput),
+  };
+}
+
+function normalizeRomTitle(value: string): string {
+  const cleaned = value
+    .toUpperCase()
+    .replaceAll(/[^A-Z0-9 ]+/g, "")
+    .trim();
+  return (cleaned || "GBA").slice(0, 12);
+}
+
+function normalizeRomCode(value: string): string {
+  const cleaned = value.toUpperCase().replaceAll(/[^A-Z0-9]+/g, "");
+  const padded = (cleaned || "GAME").padEnd(4, "G");
+  return padded.slice(0, 4);
+}
+
+function hasUnsafePathCharacters(value: string): boolean {
+  return /[^A-Za-z0-9._/\\-]/.test(value);
 }
 
 function resolveButanoLibDir(butanoDir: string): string {
