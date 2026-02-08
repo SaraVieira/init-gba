@@ -1,7 +1,9 @@
+import { Command } from "@oclif/core";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { run } from "./exec.js";
+import { commandExists, run } from "./exec.js";
+import { PromptSession } from "./prompt.js";
 
 export async function isGitRepo(dir: string): Promise<boolean> {
   return existsSync(path.join(dir, ".git"));
@@ -59,4 +61,25 @@ export async function updateRepo(dir: string): Promise<void> {
 
 export async function cloneRepo(url: string, dir: string): Promise<void> {
   await run("git", ["clone", "--depth", "1", url, dir]);
+}
+
+export async function ensureGitAvailable(): Promise<void> {
+  const hasGit = await commandExists("git");
+  if (!hasGit) {
+    throw new Error("git is required but was not found on PATH.");
+  }
+}
+
+export async function maybeInitGit(
+  targetDir: string,
+  prompts: PromptSession,
+  command: Command,
+): Promise<boolean> {
+  const init = await prompts.confirm("Initialize a git repository?", false);
+  if (!init) return false;
+
+  await ensureGitAvailable();
+  await run("git", ["init"], { cwd: targetDir });
+  command.log("Initialized git repository.");
+  return true;
 }

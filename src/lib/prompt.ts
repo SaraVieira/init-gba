@@ -5,9 +5,7 @@ import {
   isCancel,
 } from "@clack/prompts";
 
-export type PromptOptions = {
-  nonInteractive: boolean;
-};
+import { PromptOptions } from "./types.js";
 
 export class PromptSession {
   private nonInteractive: boolean;

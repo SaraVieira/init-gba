@@ -1,6 +1,8 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+import type { RomMetadata } from "./types.js";
+
 const TEXT_EXTENSIONS = new Set([
   ".bat",
   ".c",
@@ -121,11 +123,6 @@ export async function renamePathsWithToken(
 
   return renamed;
 }
-
-export type RomMetadata = {
-  code: string;
-  title: string;
-};
 
 export function makefileContents(
   butanoDir: string,
