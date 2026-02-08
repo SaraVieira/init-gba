@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/commands/create.ts","./src/lib/exec.ts","./src/lib/git.ts","./src/lib/paths.ts","./src/lib/prompt.ts","./src/lib/template.ts"],"version":"5.9.3"}

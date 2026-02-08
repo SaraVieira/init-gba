@@ -1,0 +1,69 @@
+{
+  "name": "init-gba",
+  "description": "A CLI to kickstart a GBA game",
+  "version": "0.0.0",
+  "author": "SaraVieira",
+  "bin": {
+    "init-gba": "./bin/run.js"
+  },
+  "bugs": "https://github.com/SaraVieira/init-gba/issues",
+  "dependencies": {
+    "@clack/prompts": "^1.0.0",
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "ansis": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1",
+    "@oclif/prettier-config": "^0.2.1",
+    "@oclif/test": "^4",
+    "@types/chai": "^4",
+    "@types/mocha": "^10",
+    "@types/node": "^18",
+    "chai": "^4",
+    "eslint": "^9",
+    "eslint-config-oclif": "^6",
+    "eslint-config-prettier": "^10",
+    "mocha": "^10",
+    "oclif": "^4",
+    "shx": "^0.3.3",
+    "ts-node": "^10",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "./bin",
+    "./dist",
+    "./assets",
+    "./oclif.manifest.json"
+  ],
+  "homepage": "https://github.com/SaraVieira/init-gba",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "type": "module",
+  "oclif": {
+    "bin": "init-gba",
+    "dirname": "init-gba",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " "
+  },
+  "repository": "SaraVieira/init-gba",
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "pnpm run lint",
+    "prepack": "oclif manifest && oclif readme",
+    "test": "pnpm run build && mocha --forbid-only \"test/**/*.test.js\"",
+    "version": "oclif readme && git add README.md"
+  },
+  "types": "dist/index.d.ts"
+}
