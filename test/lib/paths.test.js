@@ -71,7 +71,7 @@ describe("hasUnsafePathCharacters", () => {
     expect(hasUnsafePathCharacters("/home/user/project")).to.equal(false);
     expect(hasUnsafePathCharacters("my-game")).to.equal(false);
     expect(hasUnsafePathCharacters("game_v1.0")).to.equal(false);
-    expect(hasUnsafePathCharacters("Users\\game")).to.equal(false);
+    expect(hasUnsafePathCharacters(String.raw`Users\game`)).to.equal(false);
   });
 
   it("returns true for paths with spaces", () => {

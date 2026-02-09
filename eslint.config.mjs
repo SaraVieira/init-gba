@@ -9,4 +9,13 @@ const gitignorePath = path.resolve(
   ".gitignore",
 );
 
-export default [includeIgnoreFile(gitignorePath), ...oclif, prettier];
+export default [
+  includeIgnoreFile(gitignorePath),
+  ...oclif,
+  prettier,
+  {
+    rules: {
+      "mocha/max-top-level-suites": "off",
+    },
+  },
+];

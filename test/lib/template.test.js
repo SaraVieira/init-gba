@@ -97,7 +97,7 @@ describe("makefileContents", () => {
 
   it("escapes spaces in butano path", () => {
     const result = makefileContents("/home/my user/butano", "game");
-    expect(result).to.contain("LIBBUTANO     :=  /home/my\\ user/butano");
+    expect(result).to.contain(String.raw`LIBBUTANO     :=  /home/my\ user/butano`);
   });
 
   it("includes common dir paths when provided", () => {

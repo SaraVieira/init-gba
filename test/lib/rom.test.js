@@ -5,8 +5,8 @@ import { resolveRomMetadata } from "../../dist/lib/rom.js";
 function makePrompts(responses = {}) {
   return {
     confirm: async (_msg, _def) =>
-      responses.confirm !== undefined ? responses.confirm : false,
-    text: async (_msg, def) => responses.text !== undefined ? responses.text : def,
+      responses.confirm === undefined ? false : responses.confirm,
+    text: async (_msg, def) => responses.text === undefined ? def : responses.text,
   };
 }
 
@@ -103,7 +103,7 @@ describe("resolveRomMetadata", () => {
   it("normalizes user-provided title and code from prompts", async () => {
     const prompts = {
       confirm: async () => true,
-      text: async (msg) => {
+      async text(msg) {
         if (msg === "ROM title") return "cool game!";
         if (msg === "ROM code") return "xy";
         return "";
