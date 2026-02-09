@@ -1,7 +1,7 @@
 {
   "name": "init-gba",
   "description": "A CLI that makes bootstrapping a GBA game with butano a breeze",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "SaraVieira",
   "bin": {
     "init-gba": "./bin/run.js"
